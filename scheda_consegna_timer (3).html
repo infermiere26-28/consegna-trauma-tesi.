@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Scheda di consegna — lettura a tempo</title>
+<style>
+  :root{
+    --bg:#12171a;
+    --panel:#1b2226;
+    --panel-border:#2a3338;
+    --text:#e8ece9;
+    --muted:#8b9691;
+    --accent:#57d9a3;
+    --accent-dim:#2e5c4d;
+    --warn:#e3a94a;
+    --danger:#e2665a;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html,body{
+    margin:0; padding:0; height:100%;
+    background:var(--bg); color:var(--text);
+    -webkit-tap-highlight-color: transparent;
+  }
+  body{
+    display:flex; align-items:center; justify-content:center;
+    min-height:100%;
+    padding: calc(24px + env(safe-area-inset-top,0px)) 16px calc(24px + env(safe-area-inset-bottom,0px));
+  }
+  .wrap{ width:100%; max-width:640px; }
+
+  .topbar{
+    display:flex; align-items:baseline; justify-content:space-between;
+    margin-bottom:14px; padding: 0 4px;
+  }
+  .study-label{
+    font-size:12px; letter-spacing:0.04em; color:var(--muted);
+  }
+  .timer{
+    font-family:"SFMono-Regular",Consolas,"Liberation Mono",Menlo,monospace;
+    font-size:28px; font-weight:600; color:var(--accent);
+    font-variant-numeric: tabular-nums;
+    min-width:64px; text-align:right;
+  }
+  .timer.warn{ color:var(--warn); }
+  .timer.danger{ color:var(--danger); }
+
+  .panel{
+    background:var(--panel); border:1px solid var(--panel-border);
+    border-radius:10px; padding:28px 26px;
+    line-height:1.62; font-size:16.5px;
+  }
+  .panel h1{
+    font-size:15px; margin:0 0 16px; color:var(--muted);
+    font-weight:600; letter-spacing:0.02em;
+  }
+  .card-text{
+    user-select:none; -webkit-user-select:none;
+  }
+  .card-text p{ margin:0 0 14px; }
+  .imist-row{
+    display:grid; grid-template-columns:26px 1fr; gap:2px 10px;
+    margin-bottom:12px; align-items:baseline;
+  }
+  .imist-row .letter{
+    color:var(--accent); font-weight:700; font-size:15px;
+  }
+
+  .gate{ text-align:center; padding:10px 4px 4px; }
+  .gate p{ color:var(--muted); margin: 0 0 22px; font-size:15px; }
+  button{
+    font-family:inherit; font-size:16px; font-weight:600;
+    padding:13px 26px; border-radius:8px; border:none;
+    cursor:pointer;
+  }
+  .btn-primary{
+    background:var(--accent); color:#0b1210;
+  }
+  .btn-primary:active{ transform:scale(0.98); }
+
+  .done{ display:none; text-align:center; padding:14px 4px 4px; }
+  .done .mark{ font-size:34px; margin-bottom:6px; }
+  .done h2{ margin:0 0 10px; font-size:19px; }
+  .done p{ color:var(--muted); margin:0 0 24px; font-size:14.5px; }
+  a.btn-primary{ display:inline-block; text-decoration:none; }
+
+  .foot-note{
+    text-align:center; color:var(--muted); font-size:12px;
+    margin-top:16px; padding:0 10px;
+  }
+  .error{
+    text-align:center; padding:40px 20px; color:var(--muted);
+  }
+
+  @media (prefers-color-scheme: light){
+    /* Mantenuto scuro deliberatamente: coerenza visiva indipendente dal dispositivo */
+  }
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+
+<script>
+/* ============================================================
+   CONFIGURAZIONE — modifica solo questi valori
+   ============================================================ */
+const READING_SECONDS = 90;
+
+// Link completo del Google Form (serve la versione lunga, non forms.gle,
+// perché solo così la precompilazione del campo "Codice versione" funziona sempre)
+const FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSc5lPYeE9lt38gibxI6HDfnofM9MzFAmj7EkMl-Wm7EqVonfw/viewform";
+
+/* ============================================================ */
+
+const TESTO_NARRATIVA = `
+<p>"Allora, abbiamo qui un ragazzo di 34 anni, motociclista, scontro con un'auto, è stato sbalzato per circa cinque metri, portava il casco. Adesso ha la pressione un po' bassa, 92 su 60, e il cuore gli batte veloce, 118 al minuto. Gli abbiamo dato l'acido tranexamico verso le 14 e 20, un grammo, e messo la cintura pelvica perché il bacino sembra instabile al test di compressione. Ha anche una frattura esposta al femore destro, sanguinava ma l'abbiamo tamponata con compressione diretta e ora è sotto controllo. Satura al 94% con la maschera a 15 litri, respira a 24 al minuto, il torace è simmetrico all'auscultazione, niente pneumotorace che si senta. Gli abbiamo messo due accessi di grosso calibro e dato mezzo litro di cristalloidi, più fentanyl 50 microgrammi per il dolore verso le 14 e 25. Il GCS era 14 sulla scena, ora è sceso a 13. Non ha allergie che sappiamo, non prende farmaci, niente patologie pregresse a quanto ci ha detto. L'abbiamo immobilizzato su tavola spinale con collare. I familiari sono stati avvisati e stanno arrivando. Siamo partiti dalla scena alle 14:35, dovremmo arrivare tra cinque minuti."</p>
+`;
+
+const TESTO_STRUTTURATA = `
+<div class="imist-row"><span class="letter">I</span><span>Identificazione — Paziente maschio, 34 anni.</span></div>
+<div class="imist-row"><span class="letter">M</span><span>Meccanismo — Scontro motociclista contro autovettura, proiezione del paziente per circa 5 metri. Casco indossato correttamente.</span></div>
+<div class="imist-row"><span class="letter">I</span><span>Lesioni identificate — Sospetta frattura pelvica instabile (test di compressione positivo). Frattura esposta di femore destro, sanguinamento moderato attualmente controllato con compressione diretta.</span></div>
+<div class="imist-row"><span class="letter">S</span><span>Segni vitali — FC 118 bpm, PA 92/60 mmHg, FR 24 atti/min, SpO2 94% con maschera ad alti flussi a 15 L/min. Murmure vescicolare presente e simmetrico. GCS attuale 13 (in calo da 14 rilevato sulla scena).</span></div>
+<div class="imist-row"><span class="letter">T</span><span>Trattamento effettuato — Applicata cintura pelvica a livello trocanterico. Posizionati due accessi venosi di grosso calibro. Infusi 500 ml di cristalloidi. Somministrato acido tranexamico 1 g e.v. alle 14:20. Somministrato fentanyl 50 mcg e.v. alle 14:25. Immobilizzazione spinale con tavola e collare cervicale.</span></div>
+<div class="imist-row"><span class="letter">A</span><span>Allergie — Nessuna nota.</span></div>
+<div class="imist-row"><span class="letter">M</span><span>Farmaci abituali — Nessuno.</span></div>
+<div class="imist-row"><span class="letter">B</span><span>Anamnesi patologica remota — Non significativa.</span></div>
+<div class="imist-row"><span class="letter">O</span><span>Altro — Familiari avvisati, in arrivo in ospedale. Partenza dalla scena alle 14:35, arrivo stimato tra 5 minuti.</span></div>
+`;
+
+// ID della domanda "Codice versione (non modificare)" nel Google Form
+const ENTRY_ID_VERSIONE = "1254327864";
+
+// Estrazione casuale 50/50 ad ogni apertura della pagina
+const versione = Math.random() < 0.5 ? 'narrativa' : 'strutturata';
+
+const app = document.getElementById('app');
+
+function render(html){ app.innerHTML = html; }
+
+{
+  const testoHtml = versione === 'narrativa' ? TESTO_NARRATIVA : TESTO_STRUTTURATA;
+  const codiceVersione = versione === 'narrativa' ? 'A' : 'B';
+  const formUrl = FORM_URL + '?usp=pp_url&entry.' + ENTRY_ID_VERSIONE + '=' + encodeURIComponent(codiceVersione);
+
+  render(`
+    <div class="panel">
+      <div id="gate" class="gate">
+        <h1>SCHEDA DI CONSEGNA — LETTURA A TEMPO</h1>
+        <p>Avrai ${READING_SECONDS} secondi per leggere la scheda una sola volta.<br>
+        Non potrai tornare indietro né rileggerla. Premi il pulsante quando sei pronto/a.</p>
+        <button class="btn-primary" id="startBtn">Sono pronto/a — inizia</button>
+      </div>
+
+      <div id="reading" style="display:none;">
+        <div class="topbar">
+          <span class="study-label">TEMPO RIMANENTE</span>
+          <span class="timer" id="timerDisplay">${READING_SECONDS}</span>
+        </div>
+        <div class="card-text" oncopy="return false;" oncontextmenu="return false;">
+          ${testoHtml}
+        </div>
+      </div>
+
+      <div id="done" class="done">
+        <div class="mark">⏱</div>
+        <h2>Tempo scaduto</h2>
+        <p>Ora rispondi al test di richiamo basandoti solo sulla memoria.<br>Non è più possibile tornare a questa pagina per rileggere la scheda.</p>
+        <a class="btn-primary" href="${formUrl}" target="_blank" rel="noopener">Vai al test di richiamo →</a>
+      </div>
+    </div>
+    <p class="foot-note">Studio sulla comunicazione clinica in emergenza — Tesi di Laurea in Infermieristica</p>
+  `);
+
+  document.getElementById('startBtn').addEventListener('click', function(){
+    document.getElementById('gate').style.display = 'none';
+    document.getElementById('reading').style.display = 'block';
+
+    let remaining = READING_SECONDS;
+    const display = document.getElementById('timerDisplay');
+
+    const tick = setInterval(function(){
+      remaining--;
+      display.textContent = remaining;
+      if (remaining <= 10) display.classList.add('danger');
+      else if (remaining <= 30) display.classList.add('warn');
+
+      if (remaining <= 0){
+        clearInterval(tick);
+        document.getElementById('reading').style.display = 'none';
+        document.getElementById('done').style.display = 'block';
+      }
+    }, 1000);
+  });
+
+  // Blocco base copia/menu contestuale su tutta la pagina durante la lettura
+  document.addEventListener('contextmenu', function(e){ e.preventDefault(); });
+}
+</script>
+</body>
+</html>
