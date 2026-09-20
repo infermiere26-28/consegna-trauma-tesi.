@@ -26,7 +26,7 @@
   body{
     display:flex; align-items:center; justify-content:center;
     min-height:100%;
-    padding: calc(24px + env(safe-area-inset-top,0px)) 16px calc(24px + env(safe-area-inset-bottom,0px));
+    padding: calc(56px + env(safe-area-inset-top,0px)) 16px calc(24px + env(safe-area-inset-bottom,0px));
   }
   .wrap{ width:100%; max-width:640px; }
 
@@ -164,7 +164,7 @@ function render(html){ app.innerHTML = html; }
       </div>
 
       <div id="done" class="done">
-        <div class="mark">⏱</div>
+        <div class="mark">⏱️</div>
         <h2>Tempo scaduto</h2>
         <p>Ora rispondi al test di richiamo basandoti solo sulla memoria.<br>Non è più possibile tornare a questa pagina per rileggere la scheda.</p>
         <a class="btn-primary" href="${formUrl}" target="_blank" rel="noopener">Vai al test di richiamo →</a>
