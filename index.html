@@ -1,6 +1,3 @@
-
-
-
 <!DOCTYPE html>
 <html lang="it">
 <head>
@@ -110,8 +107,7 @@
    ============================================================ */
 const READING_SECONDS = 90;
 
-// Link completo del Google Form (serve la versione lunga, non forms.gle,
-// perché solo così la precompilazione del campo "Codice versione" funziona sempre)
+// Link del tuo Google Form (quello che si apre dopo i 90 secondi)
 const FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSc5lPYeE9lt38gibxI6HDfnofM9MzFAmj7EkMl-Wm7EqVonfw/viewform";
 
 /* ============================================================ */
@@ -132,8 +128,8 @@ const TESTO_STRUTTURATA = `
 <div class="imist-row"><span class="letter">O</span><span>Altro — Familiari avvisati, in arrivo in ospedale. Partenza dalla scena alle 14:35, arrivo stimato tra 5 minuti.</span></div>
 `;
 
-// ID della domanda "Codice versione (non modificare)" nel Google Form
-const ENTRY_ID_VERSIONE = "1254327864";
+// ID della domanda "Codice versione" — non più usato: il formato assegnato
+// va tracciato manualmente da te tramite l'email raccolta dal Form.
 
 // Estrazione casuale 50/50 ad ogni apertura della pagina
 const versione = Math.random() < 0.5 ? 'narrativa' : 'strutturata';
@@ -144,16 +140,29 @@ function render(html){ app.innerHTML = html; }
 
 {
   const testoHtml = versione === 'narrativa' ? TESTO_NARRATIVA : TESTO_STRUTTURATA;
-  const codiceVersione = versione === 'narrativa' ? 'A' : 'B';
-  const formUrl = FORM_URL + '?usp=pp_url&entry.' + ENTRY_ID_VERSIONE + '=' + encodeURIComponent(codiceVersione);
+  const formUrl = FORM_URL;
 
   render(`
     <div class="panel">
-      <div id="gate" class="gate">
-        <h1>SCHEDA DI CONSEGNA — LETTURA A TEMPO</h1>
-        <p>Avrai ${READING_SECONDS} secondi per leggere la scheda una sola volta.<br>
-        Non potrai tornare indietro né rileggerla. Premi il pulsante quando sei pronto/a.</p>
-        <button class="btn-primary" id="startBtn">Sono pronto/a — inizia</button>
+      <div id="gate" class="gate" style="text-align:left;">
+        <h1 style="text-align:center;">PRIMA DI INIZIARE</h1>
+        <p style="text-align:left;">
+          Ciao, sono <strong>Erika Vigilante</strong>, studentessa del Corso di Laurea in Infermieristica
+          dell'Università di Foggia. Questo studio fa parte della mia tesi di laurea.
+          Grazie per il tempo che dedichi a partecipare.
+        </p>
+        <p style="text-align:left;">
+          Ecco cosa farai da qui a pochi minuti: tra poco ti verrà mostrata una breve scheda clinica
+          relativa a un paziente politraumatizzato. Avrai <strong>90 secondi</strong> per leggerla
+          una sola volta — trascorso questo tempo, il testo scomparirà automaticamente e non potrai
+          più tornare a rivederlo. Subito dopo si aprirà un modulo con alcune domande a cui risponderai
+          basandoti solo su quello che ricordi. Non preoccuparti se non ricordi tutto: è normale,
+          fa parte di quello che vogliamo osservare.
+        </p>
+        <p style="text-align:center; margin-top:24px;">Quando sei pronto/a, premi il pulsante per iniziare.</p>
+        <div style="text-align:center;">
+          <button class="btn-primary" id="startBtn">Sono pronto/a — inizia</button>
+        </div>
       </div>
 
       <div id="reading" style="display:none;">
